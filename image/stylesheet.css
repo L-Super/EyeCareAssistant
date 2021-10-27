@@ -1,0 +1,72 @@
+
+QWidget#EyeCareWindow
+{
+    /*渐变过程：X1----X2从左向右渐变；  Y1---Y2从上向下渐变。*/
+    background-color: qlineargradient(x1: 1, y1: 0, x2: 0, y2: 0, stop: 0 #56B4D3, stop: 1 #348F50);
+}
+
+QLabel
+{
+    color:rgb(238,156,108);
+    font: 16px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+QPushButton
+{
+    font: 16px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+	color: rgb(238,156,108);
+    background-color: rgb(72, 177, 212);
+    border: 1px;
+    border-radius: 3px;
+}
+/* 鼠标悬浮时 */
+QPushButton:hover{
+	/* color: rgb(255, 255, 255); */
+    background-color: rgb(115,192,136);
+}
+/* 鼠标点击时 */
+QPushButton:pressed{
+	color: white;
+    background-color: #80BEAF;
+}
+
+QSpinBox
+{
+    color: rgb(238,156,108);
+    font: 16px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/*spinbox 抬起样式*/
+QSpinBox::up-button {
+    subcontrol-origin:border;
+	subcontrol-position:right;
+    image: url(:/image/image/arrow-up.png);
+	width: 16px;
+	height: 16px;				
+}
+QSpinBox::down-button {
+    subcontrol-origin:border;
+	subcontrol-position:left;
+    image: url(:/image/image/arrow-down.png);
+	width: 16px;
+	height: 16px;
+}
+/*按钮按下样式*/
+QSpinBox::up-button:pressed{
+    subcontrol-origin:border;
+	subcontrol-position:right;
+    image: url(:/image/image/arrow-circle-up.png);
+	width: 16px;
+	height: 16px;		
+}
+ 
+QSpinBox::down-button:pressed{
+    subcontrol-origin:border;
+	subcontrol-position:left;
+    image: url(:/image/image/arrow-circle-down.png);
+	width: 16px;
+	height: 16px;}
+}

@@ -1,0 +1,13 @@
+<RCC>
+    <qresource prefix="/image">
+        <file>image/ico.png</file>
+        <file>image/wallpaper.jpg</file>
+        <file>image/exit.png</file>
+        <file>image/home.png</file>
+        <file>image/stylesheet.css</file>
+        <file>image/arrow-circle-down.png</file>
+        <file>image/arrow-circle-up.png</file>
+        <file>image/arrow-down.png</file>
+        <file>image/arrow-up.png</file>
+    </qresource>
+</RCC>
