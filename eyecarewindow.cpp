@@ -8,6 +8,7 @@
 
 #include "eyecarewindow.h"
 #include "ui_eyecarewindow.h"
+#include <QMessageBox>
 #include <QCloseEvent>
 #include <QDebug>
 
@@ -25,22 +26,14 @@ EyeCareWindow::EyeCareWindow(QWidget *parent)
     // 禁止最大化
     setWindowFlags(this->windowFlags()&~Qt::WindowMaximizeButtonHint);
     setWindowIcon(QIcon(":/image/image/ico.png"));
-//    // 背景图片
-
-//    QPixmap pixmap = QPixmap(":/image/image/wallpaper.jpg").scaled(this->size());
-//    QPalette palette (this->palette());
-//    palette.setBrush(QPalette::Background, QBrush(pixmap));
-//    this->setPalette(palette);
 
 
 
-//    setWindowFlags(Qt::Tool);
-
-//    currentTime = QTime::currentTime();
+    timeProgress = 0;
     // 气泡推送，每隔一段时间推送一次
     num = 0;
     timer = new QTimer(this);
-    timer->start(500000);
+//    timer->start(500000);
     connect(timer,&QTimer::timeout,this,&EyeCareWindow::NotifyText);
 }
 
@@ -67,14 +60,21 @@ void EyeCareWindow::NotifyText()
   *  cbSize: 	NOTIFYICONDATA 占用的空间大小
   *  uID: 	创建的图标标识，与 hWnd 组合定位托盘图标。
   *  hIcon: 	图标句柄，一般使用 LoadIcon(hInst, MAKEINTRESOURCE(IDI_WIN32TEST)) 赋予。
-  *  uTimeout
-  * uCallbackMessage 	托盘图标响应消息
+  *  uTimeout 气泡自动消失的时间
+  *  uCallbackMessage 	托盘图标响应消息
   *  uFlags 	标识，指出有效的成员并且指出托盘图标显示的方式:
       * NIF_MESSAGE 使 uCallbackMessage 有效，
       * NIF_ICON 使 hIcon 有效， NIF_TIP 使 szTip 有效，
       * NIF_INFO 使 szInfo 、 szInfoTitle 、 dwInfoFlags 、 uTimeout 有效。
-  *  szTip 鼠标指向托盘图标时显示的提示消息，注意长度。
+  * szTip 鼠标指向托盘图标时显示的提示消息，注意长度。
   * szInfo 气泡提示内容，注意长度。
+  * dwInfoFlags 气泡图标
+        NIIF_NONE 表示无图标，
+        NIIF_INFO 表示【提示】，
+        NIIF_WARNING 表示【警告】，
+        NIIF_ERROR 表示【错误】
+  *
+
 */
 
     qDebug()<<"enter notify func"<<num++;
@@ -87,30 +87,45 @@ void EyeCareWindow::NotifyText()
     wcscpy_s(nid.szInfo,L"内容");
     //szInfoTitle 气泡标题
     wcscpy_s(nid.szInfoTitle,L"推送标题");
-    // dwInfoFlags 气泡图标，
-    // NIIF_NONE 表示无图标，
-    // NIIF_INFO 表示【提示】，
-    // NIIF_WARNING 表示【警告】，
-    // NIIF_ERROR 表示【错误】
+    // dwInfoFlags 气泡图标
     nid.dwInfoFlags = NIIF_INFO;
     // 气泡自动消失的时间
     nid.uTimeout = 10000;
     Shell_NotifyIcon(NIM_ADD,&nid);//在托盘区添加图标
+    // 进度条倒计时显示
+    TimeProgressBar();
 }
 
 void EyeCareWindow::CreateTrayAction()
 {
     trayShowAction = new QAction("显示主界面");
-    trayExitAction = new QAction("退出");
+    exitAction = new QAction("退出");
+    aboutAction = new QAction("关于");
+    cancelAction = new QAction("取消");
     trayShowAction->setIcon(QIcon(":/image/image/home.png"));
-    trayExitAction->setIcon(QIcon(":/image/image/exit.png"));
-   connect(trayShowAction,&QAction::triggered,this,[this](){
-       this->show();
-       myTrayIcon->deleteLater(); });
-    connect(trayExitAction,&QAction::triggered,this,[this](){
+    exitAction->setIcon(QIcon(":/image/image/exit.png"));
+    aboutAction->setIcon(QIcon(":/image/image/about.png"));
+    cancelAction->setIcon(QIcon(":/image/image/cancel.png"));
+    connect(trayShowAction,&QAction::triggered,this,[this](){
+        this->show();
+        myTrayIcon->deleteLater(); });
+    connect(exitAction,&QAction::triggered,this,[this](){
         // 避免退出，图标延时消失
         delete myTrayIcon;
-        exit(0);});
+        exit(0);
+    });
+
+    connect(aboutAction,&QAction::triggered,[this]{
+        // 控制着当最后一个可视的窗口退出时候，程序是否退出，默认是true
+        // 不加的话，点击后主程序也退出了
+        QApplication::setQuitOnLastWindowClosed(false);
+        QMessageBox::about(this,"关于我","一个爱瞎搞的楚莫识\nv1.0.0");
+    });
+    connect(cancelAction,&QAction::triggered,this,[this]{
+        timer->stop();
+//        QApplication::setQuitOnLastWindowClosed(false);
+        QMessageBox::information(this,"取消","已取消定时",QMessageBox::Ok);
+    });
 }
 
 // 托盘显示应用
@@ -124,13 +139,15 @@ void EyeCareWindow::ShowTrayIcon()
     myTrayIcon->setToolTip(("护眼小助手"));
     // 在系统拖盘增加图标时显示提示信息。
     myTrayIcon->showMessage("提示","单击隐藏,双击显示主窗口");
-//    QScopedPointer<QMenu> trayMenu(new QMenu);
-//    QScopedPointer<QAction> trayShowAction(new QAction("显示主界面"));
+
     CreateTrayAction();
+
     trayMenu = new QMenu();
     trayMenu->addAction(trayShowAction);
+    trayMenu->addAction(cancelAction);
+    trayMenu->addAction(aboutAction);
     trayMenu->addSeparator();
-    trayMenu->addAction(trayExitAction);
+    trayMenu->addAction(exitAction);
 
     // 在用户右击时，弹出菜单。
     myTrayIcon->setContextMenu(trayMenu);
@@ -145,6 +162,25 @@ void EyeCareWindow::closeEvent(QCloseEvent *event)
     event->ignore();
     ShowTrayIcon();
     this->hide();
+}
+
+// 进度条倒计时显示
+void EyeCareWindow::TimeProgressBar()
+{
+    // 计算百分比的公式为：(value() - minimum()) / (maximum() - minimum())。
+    auto settingTime = ui->spinBox->text();
+    auto times = settingTime.toInt();
+    float step = 100 / times;
+    timeProgress += step;
+//    auto percentage =
+    ui->progressBar->setValue(timeProgress);
+
+    if(timeProgress == 100)
+    {
+        qDebug("time reach 100");
+        triggerProgressTimer->stop();
+        timeProgress = 0;
+    }
 }
 
 // 双击显示
@@ -170,3 +206,19 @@ void EyeCareWindow::TrayIconActivated(QSystemTrayIcon::ActivationReason reason)
     }
 }
 
+
+void EyeCareWindow::on_pushButton_clicked()
+{
+    auto settingTime = ui->spinBox->text();
+    auto flag = QMessageBox::information(this,tr("提示对话框"),tr("设置成功!"), QMessageBox::Ok);
+    if(flag == QMessageBox::Ok) qDebug()<<tr("clicked ok!");
+    // 1000ms = 1s 1000*60 = 1 min
+    auto times = settingTime.toInt() * 1000 * 60;
+    timer->start(times);
+
+    triggerProgressTimer = new QTimer(this);
+//    triggerProgressTimer->start(1000 * 60);
+    triggerProgressTimer->start(1000);
+    connect(triggerProgressTimer,&QTimer::timeout,this,&EyeCareWindow::TimeProgressBar);
+
+}

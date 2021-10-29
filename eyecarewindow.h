@@ -24,20 +24,27 @@ public:
 
 private:
     void closeEvent(QCloseEvent *event);
+    void TimeProgressBar();
 
 public slots:
     // 被激活的操作
     void TrayIconActivated(QSystemTrayIcon::ActivationReason reason);
 
+private slots:
+    void on_pushButton_clicked();
+
 private:
     Ui::EyeCareWindow *ui;
     NOTIFYICONDATA nid;
     QSystemTrayIcon *myTrayIcon; // 托盘图标
-    QTime currentTime;
     QTimer *timer;
     int num; // 记录触发气泡次数
     QMenu *trayMenu;
     QAction *trayShowAction;
-    QAction *trayExitAction;
+    QAction *exitAction;
+    QAction *cancelAction;
+    QAction *aboutAction;
+    QTimer *triggerProgressTimer;
+    int timeProgress; // 进度条
 };
 #endif // EYECAREWINDOW_H

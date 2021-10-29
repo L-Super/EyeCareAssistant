@@ -68,5 +68,21 @@ QSpinBox::down-button:pressed{
 	subcontrol-position:left;
     image: url(:/image/image/arrow-circle-down.png);
 	width: 16px;
-	height: 16px;}
+	height: 16px;
+}
+
+QProgressBar
+{
+    font: 16px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+	color: rgb(238,156,108);
+    border: 1px solid rgb(236, 222, 214);
+    
+    border-radius: 3px;
+}
+
+/*进度条 颜色*/
+QProgressBar::chunk {
+    border: none;
+    background-color: qlineargradient(x1: 1, y1: 0, x2: 0, y2: 0, stop: 0 #56B4D3, stop: 1 #348F50);
 }
