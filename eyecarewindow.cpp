@@ -4,12 +4,17 @@
  * 通过气泡弹窗，提醒
 */
 
-// TODO:最小化按钮重写为隐藏到托盘
+// TODO:
+// *最小化按钮重写为隐藏到托盘
+// *添加休息弹窗
 
 #include "eyecarewindow.h"
 #include "ui_eyecarewindow.h"
 #include <QMessageBox>
+#include <QProgressDialog>
 #include <QCloseEvent>
+#include <QPainter>
+#include <QBrush>
 #include <QDebug>
 
 #include <windows.h>
@@ -27,13 +32,14 @@ EyeCareWindow::EyeCareWindow(QWidget *parent)
     setWindowFlags(this->windowFlags()&~Qt::WindowMaximizeButtonHint);
     setWindowIcon(QIcon(":/image/image/ico.png"));
 
-
+    // 设置窗体透明
+//    this->setWindowOpacity(0.8);
 
     timeProgress = 0;
     // 气泡推送，每隔一段时间推送一次
     num = 0;
     timer = new QTimer(this);
-//    timer->start(500000);
+//    timer->start(500);
     connect(timer,&QTimer::timeout,this,&EyeCareWindow::NotifyText);
 }
 
@@ -73,8 +79,6 @@ void EyeCareWindow::NotifyText()
         NIIF_INFO 表示【提示】，
         NIIF_WARNING 表示【警告】，
         NIIF_ERROR 表示【错误】
-  *
-
 */
 
     qDebug()<<"enter notify func"<<num++;
@@ -84,16 +88,16 @@ void EyeCareWindow::NotifyText()
     // 标识，指出有效的成员并且指出托盘图标显示的方式
     nid.uFlags = NIF_ICON|NIF_MESSAGE|NIF_TIP|NIF_INFO;
     // 气泡提示内容
-    wcscpy_s(nid.szInfo,L"内容");
+    wcscpy_s(nid.szInfo,L"你已经看电脑很长时间啦\n放松一下眼睛叭");
     //szInfoTitle 气泡标题
-    wcscpy_s(nid.szInfoTitle,L"推送标题");
+    wcscpy_s(nid.szInfoTitle,L"Ding~");
     // dwInfoFlags 气泡图标
     nid.dwInfoFlags = NIIF_INFO;
     // 气泡自动消失的时间
     nid.uTimeout = 10000;
     Shell_NotifyIcon(NIM_ADD,&nid);//在托盘区添加图标
-    // 进度条倒计时显示
-    TimeProgressBar();
+//    // 进度条倒计时显示
+//    TimeProgressBar();
 }
 
 void EyeCareWindow::CreateTrayAction()
@@ -156,6 +160,20 @@ void EyeCareWindow::ShowTrayIcon()
             SLOT(TrayIconActivated(QSystemTrayIcon::ActivationReason)));
 }
 
+// 到时弹出休息框，提示休息眼睛
+void EyeCareWindow::ShowRestDialog()
+{
+    restDialog = new RestDialog();
+    restDialog->show();
+    QTimer* countdown = new QTimer(this);
+    countdown->start(6000);
+    connect(countdown, &QTimer::timeout,this,[&]()
+    {
+        restDialog->close();
+    });
+
+}
+
 // 点击关闭按钮，实现隐藏到托盘
 void EyeCareWindow::closeEvent(QCloseEvent *event)
 {
@@ -172,7 +190,7 @@ void EyeCareWindow::TimeProgressBar()
     auto times = settingTime.toInt();
     float step = 100 / times;
     timeProgress += step;
-//    auto percentage =
+
     ui->progressBar->setValue(timeProgress);
 
     if(timeProgress == 100)
@@ -180,7 +198,11 @@ void EyeCareWindow::TimeProgressBar()
         qDebug("time reach 100");
         triggerProgressTimer->stop();
         timeProgress = 0;
+//        this->hide();
+        // 弹出休息弹窗
+        ShowRestDialog();
     }
+
 }
 
 // 双击显示
@@ -206,7 +228,7 @@ void EyeCareWindow::TrayIconActivated(QSystemTrayIcon::ActivationReason reason)
     }
 }
 
-
+// 开始计时
 void EyeCareWindow::on_pushButton_clicked()
 {
     auto settingTime = ui->spinBox->text();
@@ -218,7 +240,7 @@ void EyeCareWindow::on_pushButton_clicked()
 
     triggerProgressTimer = new QTimer(this);
 //    triggerProgressTimer->start(1000 * 60);
-    triggerProgressTimer->start(1000);
+    triggerProgressTimer->start(100);
     connect(triggerProgressTimer,&QTimer::timeout,this,&EyeCareWindow::TimeProgressBar);
 
 }

@@ -10,5 +10,6 @@
         <file>image/arrow-up.png</file>
         <file>image/about.png</file>
         <file>image/cancel.png</file>
+        <file>image/littlecute.png</file>
     </qresource>
 </RCC>

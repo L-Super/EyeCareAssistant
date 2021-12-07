@@ -1,4 +1,5 @@
 #include "eyecarewindow.h"
+#include "RestDialog.h"
 #include <QApplication>
 #include <QFile>
 

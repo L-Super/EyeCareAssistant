@@ -6,6 +6,7 @@
 #include <QTimer>
 #include <QTime>
 #include <windows.h>
+#include "RestDialog.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class EyeCareWindow; }
@@ -21,6 +22,7 @@ public:
     void NotifyText();
     void CreateTrayAction();
     void ShowTrayIcon();
+    void ShowRestDialog();
 
 private:
     void closeEvent(QCloseEvent *event);
@@ -46,5 +48,6 @@ private:
     QAction *aboutAction;
     QTimer *triggerProgressTimer;
     int timeProgress; // 进度条
+    RestDialog* restDialog;
 };
 #endif // EYECAREWINDOW_H
