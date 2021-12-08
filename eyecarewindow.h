@@ -40,7 +40,7 @@ private:
     NOTIFYICONDATA nid;
     QSystemTrayIcon *myTrayIcon; // 托盘图标
     QTimer *timer;
-    int num; // 记录触发气泡次数
+//    int num; // 记录触发气泡次数
     QMenu *trayMenu;
     QAction *trayShowAction;
     QAction *exitAction;
@@ -48,6 +48,8 @@ private:
     QAction *aboutAction;
     QTimer *triggerProgressTimer;
     int timeProgress; // 进度条
+    double setTime; // 设置的休息时长，分钟
     RestDialog* restDialog;
+    QTimer* countdown;// 弹窗计时器
 };
 #endif // EYECAREWINDOW_H

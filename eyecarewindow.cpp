@@ -6,12 +6,10 @@
 
 // TODO:
 // *最小化按钮重写为隐藏到托盘
-// *添加休息弹窗
 
 #include "eyecarewindow.h"
 #include "ui_eyecarewindow.h"
 #include <QMessageBox>
-#include <QProgressDialog>
 #include <QCloseEvent>
 #include <QPainter>
 #include <QBrush>
@@ -30,17 +28,18 @@ EyeCareWindow::EyeCareWindow(QWidget *parent)
     this->resize(300,125);
     // 禁止最大化
     setWindowFlags(this->windowFlags()&~Qt::WindowMaximizeButtonHint);
-    setWindowIcon(QIcon(":/image/image/ico.png"));
 
     // 设置窗体透明
 //    this->setWindowOpacity(0.8);
 
     timeProgress = 0;
     // 气泡推送，每隔一段时间推送一次
-    num = 0;
+
     timer = new QTimer(this);
-//    timer->start(500);
+    triggerProgressTimer = new QTimer(this);
+    countdown = new QTimer(this);
     connect(timer,&QTimer::timeout,this,&EyeCareWindow::NotifyText);
+    connect(triggerProgressTimer,&QTimer::timeout,this,&EyeCareWindow::TimeProgressBar);
 }
 
 EyeCareWindow::~EyeCareWindow()
@@ -81,7 +80,7 @@ void EyeCareWindow::NotifyText()
         NIIF_ERROR 表示【错误】
 */
 
-    qDebug()<<"enter notify func"<<num++;
+    qDebug()<<"enter notify func";
     nid.cbSize = (DWORD)sizeof(NOTIFYICONDATA);
 
     nid.uCallbackMessage = WM_SHOWTASK;
@@ -96,8 +95,8 @@ void EyeCareWindow::NotifyText()
     // 气泡自动消失的时间
     nid.uTimeout = 10000;
     Shell_NotifyIcon(NIM_ADD,&nid);//在托盘区添加图标
-//    // 进度条倒计时显示
-//    TimeProgressBar();
+    // 触发进度条计时器
+    triggerProgressTimer->start(1000 * 60);
 }
 
 void EyeCareWindow::CreateTrayAction()
@@ -110,9 +109,19 @@ void EyeCareWindow::CreateTrayAction()
     exitAction->setIcon(QIcon(":/image/image/exit.png"));
     aboutAction->setIcon(QIcon(":/image/image/about.png"));
     cancelAction->setIcon(QIcon(":/image/image/cancel.png"));
+
+    trayMenu = new QMenu();
+    trayMenu->addAction(trayShowAction);
+    trayMenu->addAction(cancelAction);
+    trayMenu->addAction(aboutAction);
+    trayMenu->addSeparator();
+    trayMenu->addAction(exitAction);
+
     connect(trayShowAction,&QAction::triggered,this,[this](){
         this->show();
-        myTrayIcon->deleteLater(); });
+        // 不加会造成多个托盘图标出现
+        myTrayIcon->deleteLater();
+    });
     connect(exitAction,&QAction::triggered,this,[this](){
         // 避免退出，图标延时消失
         delete myTrayIcon;
@@ -123,11 +132,11 @@ void EyeCareWindow::CreateTrayAction()
         // 控制着当最后一个可视的窗口退出时候，程序是否退出，默认是true
         // 不加的话，点击后主程序也退出了
         QApplication::setQuitOnLastWindowClosed(false);
-        QMessageBox::about(this,"关于我","一个爱瞎搞的楚莫识\nv1.0.0");
+        QMessageBox::about(this,"关于我","一个爱瞎搞的楚莫识\nv1.0.2");
     });
     connect(cancelAction,&QAction::triggered,this,[this]{
         timer->stop();
-//        QApplication::setQuitOnLastWindowClosed(false);
+        QApplication::setQuitOnLastWindowClosed(false);
         QMessageBox::information(this,"取消","已取消定时",QMessageBox::Ok);
     });
 }
@@ -146,13 +155,6 @@ void EyeCareWindow::ShowTrayIcon()
 
     CreateTrayAction();
 
-    trayMenu = new QMenu();
-    trayMenu->addAction(trayShowAction);
-    trayMenu->addAction(cancelAction);
-    trayMenu->addAction(aboutAction);
-    trayMenu->addSeparator();
-    trayMenu->addAction(exitAction);
-
     // 在用户右击时，弹出菜单。
     myTrayIcon->setContextMenu(trayMenu);
     myTrayIcon->show();
@@ -165,13 +167,16 @@ void EyeCareWindow::ShowRestDialog()
 {
     restDialog = new RestDialog();
     restDialog->show();
-    QTimer* countdown = new QTimer(this);
-    countdown->start(6000);
+
+    // 弹窗持续20s
+    countdown->start(20000);
     connect(countdown, &QTimer::timeout,this,[&]()
     {
-        restDialog->close();
+        QApplication::setQuitOnLastWindowClosed(false);
+        restDialog->hide();
+        restDialog->deleteLater();
+        countdown->stop();
     });
-
 }
 
 // 点击关闭按钮，实现隐藏到托盘
@@ -198,11 +203,11 @@ void EyeCareWindow::TimeProgressBar()
         qDebug("time reach 100");
         triggerProgressTimer->stop();
         timeProgress = 0;
-//        this->hide();
+        // 窗口最小化
+        setWindowState(Qt::WindowMinimized);
         // 弹出休息弹窗
         ShowRestDialog();
     }
-
 }
 
 // 双击显示
@@ -235,12 +240,10 @@ void EyeCareWindow::on_pushButton_clicked()
     auto flag = QMessageBox::information(this,tr("提示对话框"),tr("设置成功!"), QMessageBox::Ok);
     if(flag == QMessageBox::Ok) qDebug()<<tr("clicked ok!");
     // 1000ms = 1s 1000*60 = 1 min
-    auto times = settingTime.toInt() * 1000 * 60;
-    timer->start(times);
+    setTime = settingTime.toInt() * 1000 * 60;
+    timer->start(setTime);
 
-    triggerProgressTimer = new QTimer(this);
 //    triggerProgressTimer->start(1000 * 60);
-    triggerProgressTimer->start(100);
-    connect(triggerProgressTimer,&QTimer::timeout,this,&EyeCareWindow::TimeProgressBar);
+    triggerProgressTimer->start(100); //测试用
 
 }

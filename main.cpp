@@ -15,8 +15,12 @@ int main(int argc, char *argv[])
     else
         qDebug("Open failed");
 
+    // 这里设置图标后，关于对话框的图标也会变化
+    a.setWindowIcon(QIcon(":/image/image/ico.png"));
 
     EyeCareWindow w;
     w.show();
+//    RestDialog r;
+//    r.show();
     return a.exec();
 }

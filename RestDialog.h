@@ -13,6 +13,7 @@ class RestDialog : public QDialog
 public:
     explicit RestDialog(QWidget *parent = nullptr);
     ~RestDialog();
+    void paintEvent(QPaintEvent *event);
     void LoadBKImg();
 
 private:
