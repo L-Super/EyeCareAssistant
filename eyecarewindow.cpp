@@ -21,7 +21,7 @@
 
 EyeCareWindow::EyeCareWindow(QWidget *parent)
     : QMainWindow(parent)
-    , ui(new Ui::EyeCareWindow)
+    , ui(new Ui::EyeCareWindow),myTrayIcon(new QSystemTrayIcon(this))
 {
     ui->setupUi(this);
     this->setWindowTitle("EyeCare");
@@ -101,28 +101,35 @@ void EyeCareWindow::NotifyText()
 
 void EyeCareWindow::CreateTrayAction()
 {
-    trayShowAction = new QAction("显示主界面");
-    exitAction = new QAction("退出");
-    aboutAction = new QAction("关于");
-    cancelAction = new QAction("取消");
+    if (trayShowAction == nullptr ||
+            exitAction == nullptr ||
+            aboutAction == nullptr ||
+            cancelAction == nullptr ||
+            trayMenu == nullptr)
+    {
+        trayShowAction = new QAction("显示主界面");
+        exitAction = new QAction("退出");
+        aboutAction = new QAction("关于");
+        cancelAction = new QAction("取消");
+        trayMenu = new QMenu();
+    }
+
     trayShowAction->setIcon(QIcon(":/image/image/home.png"));
     exitAction->setIcon(QIcon(":/image/image/exit.png"));
     aboutAction->setIcon(QIcon(":/image/image/about.png"));
     cancelAction->setIcon(QIcon(":/image/image/cancel.png"));
 
-    trayMenu = new QMenu();
     trayMenu->addAction(trayShowAction);
     trayMenu->addAction(cancelAction);
     trayMenu->addAction(aboutAction);
     trayMenu->addSeparator();
     trayMenu->addAction(exitAction);
 
-    connect(trayShowAction,&QAction::triggered,this,[this](){
+    connect(trayShowAction, &QAction::triggered, this, [this](){
         this->show();
-        // 不加会造成多个托盘图标出现
-        myTrayIcon->deleteLater();
+        myTrayIcon->hide();
     });
-    connect(exitAction,&QAction::triggered,this,[this](){
+    connect(exitAction, &QAction::triggered, this, [this](){
         // 避免退出，图标延时消失
         delete myTrayIcon;
         exit(0);
@@ -146,7 +153,17 @@ void EyeCareWindow::ShowTrayIcon()
 {
     // 托盘
     QIcon systemIcon(":/image/image/ico.png");
-    myTrayIcon = new QSystemTrayIcon(systemIcon,this);
+
+    try {
+        if(myTrayIcon == nullptr)
+        {
+            myTrayIcon = new QSystemTrayIcon(systemIcon,this);
+        }
+    } catch (const char* & e) {
+        qDebug()<<"myTrayIcon new fail";
+    }
+
+    myTrayIcon->setIcon(systemIcon);
 
     //当鼠标移动到托盘上的图标时，会显示此处设置的内容
     myTrayIcon->setToolTip(("护眼小助手"));
@@ -218,7 +235,7 @@ void EyeCareWindow::TrayIconActivated(QSystemTrayIcon::ActivationReason reason)
     // 双击
     case QSystemTrayIcon::DoubleClick:
         this->showNormal();
-        myTrayIcon->deleteLater();
+        myTrayIcon->hide();
         break;
 // 单击 两者不能同时存在，因双击由两个单击构成
 //    case QSystemTrayIcon::Trigger:
